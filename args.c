@@ -16,14 +16,14 @@ static void parse_flag(struct arg *a, const char *flag, void (*usage)()) {
 		a->use_zero = 1;
 	} else {
 		usage();
-		exit(1);
+		exit(EXIT_FAILURE);
 	}
 }
 
 struct arg parse_arg(int argc, char *argv[], void (*usage)()) {
 	if (argc < 2) {
 		usage();
-		exit(1);
+		exit(EXIT_FAILURE);
 	}
 
 	struct arg ret = {0};
@@ -47,7 +47,7 @@ struct arg parse_arg(int argc, char *argv[], void (*usage)()) {
 				ret.path = arg;
 			} else {
 				usage();
-				exit(1);
+				exit(EXIT_FAILURE);
 			}
 			n++;
 			break;
