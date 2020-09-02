@@ -72,9 +72,14 @@ void usage(void) {
 Fd recursively finds all the files whose names match a pattern provided in input.\n\
 Usage:\n\
     fd [options] pattern [path]\n\
-Options:\n\
+\n\
+Flags:\n\
     -g    Use shell file name pattern instead of regex.\n\
-    -0    Separate search results by the null character (instead of newlines). Useful for piping results to 'xargs'.");
+    -i    Ignore case.\n\
+    -0    Separate search results by the null character (instead of newlines). Useful for piping results to 'xargs'.\n\
+\n\
+Options:\n\
+	-s    Specify the path separator to use (e.g. fd -s=/ pattern).");
 }
 
 int main(int argc, char *argv[]) {
@@ -84,7 +89,8 @@ int main(int argc, char *argv[]) {
 	}
 
 	arg = parse_arg(argc, argv, usage);
-	regcomp(&re, arg.pattern, REG_EXTENDED);
+	int cflags = arg.ignore_case ? REG_EXTENDED|REG_ICASE : REG_EXTENDED;
+	regcomp(&re, arg.pattern, cflags);
 
 	if (exists(arg.path)) {
 		walk_dir(arg.path);

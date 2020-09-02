@@ -14,6 +14,14 @@ static void parse_flag(struct arg *a, const char *flag, void (*usage)()) {
 		a->use_glob = 1;
 	} else if (are_equal(flag, "-0")) {
 		a->use_zero = 1;
+	} else if (are_equal(flag, "-i")) {
+		a->ignore_case = 1;
+	} else if (strstr(flag, "-s=") != NULL) {
+		if (strlen(flag) != 4) {
+			usage();
+			exit(EXIT_FAILURE);
+		}
+		a->separator = flag[3];
 	} else {
 		usage();
 		exit(EXIT_FAILURE);
