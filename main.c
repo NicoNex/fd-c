@@ -31,6 +31,18 @@ static inline int matches(const char *str) {
 	return regexec(&re, str, 1, pmatch, 0) == 0;
 }
 
+// Returns 1 if the file name is '.' or '..'.
+static inline int is_dots(const char *str) {
+	switch (strlen(str)) {
+	case 1:
+		return str[0] == '.';
+	case 2:
+		return str[0] == '.' && str[1] == '.';
+	default:
+		return 0;
+	}
+}
+
 // Replaces a target character t in a string with a specified one c.
 static inline void replace_chr(register char *str, const char t, const char c) {
 	if (*str != '\0') {
@@ -67,10 +79,12 @@ int walk_dir(const char *path) {
 	for (int i = 2; i < n; i++) {
 		const char *fname = namelist[i]->d_name;
 
+		if (is_dots(fname)) {
+			continue;
+		}
 		if (matches(fname)) {
 			print_file(path, fname);
 		}
-
 		if (is_dir(namelist[i]->d_type)) {
 			int len = strlen(path) + strlen(fname) + 2;
 			char fpath[len];
