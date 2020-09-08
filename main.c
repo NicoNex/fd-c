@@ -31,11 +31,8 @@ static inline int matches(const char *str) {
 	return regexec(&re, str, 1, pmatch, 0) == 0;
 }
 
-static inline void replace(const char *in, const char *out, char t, char r) {
-	
-}
-
-static inline void replace_chr(char *str, const char t, const char c) {
+// Replaces a target character t in a string with a specified one c.
+static inline void replace_chr(register char *str, const char t, const char c) {
 	if (*str != '\0') {
 		if (*str == t) {
 			*str = c;
@@ -44,14 +41,15 @@ static inline void replace_chr(char *str, const char t, const char c) {
 	}
 }
 
+// Prints the full path of the file according to the options.
 static inline void print_file(const char *path, const char *name) {
-	int len = strlen(path) + strlen(name) + 1;
-	char tmp[len];
+	int plen = strlen(path) + 1;
+	char path_tmp[plen];
 	char end_ln = arg.use_zero ? '\0' : '\n';
-	
-	strncpy(tmp, path, len);
-	replace_chr(tmp, '/', arg.path_sep);
-	printf("%s%c", tmp, end_ln);
+
+	memcpy(path_tmp, path, plen);
+	replace_chr(path_tmp, DEF_SEP, arg.path_sep);
+	printf("%s%c%s%c", path_tmp, arg.path_sep, name, end_ln);
 }
 
 
@@ -72,11 +70,11 @@ int walk_dir(const char *path) {
 		if (matches(fname)) {
 			print_file(path, fname);
 		}
-		
+
 		if (is_dir(namelist[i]->d_type)) {
 			int len = strlen(path) + strlen(fname) + 2;
 			char fpath[len];
-			
+
 			snprintf(fpath, len, "%s%c%s", path, DEF_SEP, fname);
 			walk_dir(fpath);
 		}
