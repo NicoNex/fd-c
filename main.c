@@ -11,14 +11,8 @@
 const char C_ZERO = '\0';
 const char C_NLN = '\n';
 
-#ifdef __WIN32
-	const char DEF_SEP = '\\';
-#else
-	const char DEF_SEP = '/';
-#endif
-
 struct arg arg;
-char separator = DEF_SEP;
+char separator;
 regex_t re;
 
 // Returns 1 if a file or directory exists otherwhise 0.
@@ -37,6 +31,30 @@ static inline int matches(const char *str) {
 	return regexec(&re, str, 1, pmatch, 0) == 0;
 }
 
+static inline void replace(const char *in, const char *out, char t, char r) {
+	
+}
+
+static inline void replace_chr(char *str, const char t, const char c) {
+	if (*str != '\0') {
+		if (*str == t) {
+			*str = c;
+		}
+		replace_chr(++str, t, c);
+	}
+}
+
+static inline void print_file(const char *path, const char *name) {
+	int len = strlen(path) + strlen(name) + 1;
+	char tmp[len];
+	char end_ln = arg.use_zero ? '\0' : '\n';
+	
+	strncpy(tmp, path, len);
+	replace_chr(tmp, '/', arg.path_sep);
+	printf("%s%c", tmp, end_ln);
+}
+
+
 // Recursively walks into a directory tree.
 int walk_dir(const char *path) {
 	struct dirent **namelist;
@@ -50,15 +68,16 @@ int walk_dir(const char *path) {
 
 	for (int i = 2; i < n; i++) {
 		const char *fname = namelist[i]->d_name;
-		int len = strlen(path) + strlen(fname) + 2;
-		char fpath[len];
 
-		snprintf(fpath, len, "%s%c%s", path, separator, fname);
 		if (matches(fname)) {
-			puts(fpath);
+			print_file(path, fname);
 		}
 		
 		if (is_dir(namelist[i]->d_type)) {
+			int len = strlen(path) + strlen(fname) + 2;
+			char fpath[len];
+			
+			snprintf(fpath, len, "%s%c%s", path, DEF_SEP, fname);
 			walk_dir(fpath);
 		}
 		free(namelist[i]);
@@ -79,7 +98,7 @@ Flags:\n\
     -0    Separate search results by the null character (instead of newlines). Useful for piping results to 'xargs'.\n\
 \n\
 Options:\n\
-	-s    Specify the path separator to use (e.g. fd -s=/ pattern).");
+    -s    Specify the path separator to use (e.g. fd -s=/ pattern).");
 }
 
 int main(int argc, char *argv[]) {
@@ -89,6 +108,7 @@ int main(int argc, char *argv[]) {
 	}
 
 	arg = parse_arg(argc, argv, usage);
+	separator = arg.path_sep;
 	int cflags = arg.ignore_case ? REG_EXTENDED|REG_ICASE : REG_EXTENDED;
 	regcomp(&re, arg.pattern, cflags);
 

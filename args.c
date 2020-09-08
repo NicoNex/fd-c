@@ -4,6 +4,7 @@
 
 #include "args.h"
 
+
 // Returns 1 if s1 and s2 are equal otherwhise 0.
 static inline int are_equal(const char *s1, const char *s2) {
 	return strcmp(s1, s2) == 0;
@@ -21,7 +22,7 @@ static void parse_flag(struct arg *a, const char *flag, void (*usage)()) {
 			usage();
 			exit(EXIT_FAILURE);
 		}
-		a->separator = flag[3];
+		a->path_sep = flag[3];
 	} else {
 		usage();
 		exit(EXIT_FAILURE);
@@ -35,6 +36,7 @@ struct arg parse_arg(int argc, char *argv[], void (*usage)()) {
 	}
 
 	struct arg ret = {0};
+	ret.path_sep = DEF_SEP;
 	int n = 0;
 
 	for (int i = 1; i < argc; i++) {
