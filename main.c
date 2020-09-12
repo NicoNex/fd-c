@@ -4,7 +4,6 @@
 #include <unistd.h>
 #include <string.h>
 #include <regex.h>
-#include <sys/stat.h>
 
 #include "args.h"
 
@@ -31,7 +30,7 @@ static inline int matches(const char *str) {
 	return regexec(&re, str, 1, pmatch, 0) == 0;
 }
 
-// Returns 1 if the file name is '.' or '..'.
+// Returns 1 if the file name is '.' or '..' otherwhise 0.
 static inline int is_dots(const char *str) {
 	switch (strlen(str)) {
 	case 1:
@@ -64,6 +63,14 @@ static inline void print_file(const char *path, const char *name) {
 	printf("%s%c%s%c", path_tmp, arg.path_sep, name, end_ln);
 }
 
+// Frees all the dir entities allocated by scandir.
+static inline void free_entities(struct dirent **namelist, const int n) {
+	if (n > 0) {
+		printf("free %d %s\n", n-1, namelist[n-1]->d_name);
+		free(namelist[n-1]);
+		free_entities(namelist, n-1);
+	}
+}
 
 // Recursively walks into a directory tree.
 int walk_dir(const char *path) {
@@ -76,6 +83,7 @@ int walk_dir(const char *path) {
 		exit(EXIT_FAILURE);
 	}
 
+	#pragma omp parallel for schedule(static)
 	for (int i = 2; i < n; i++) {
 		const char *fname = namelist[i]->d_name;
 
@@ -92,8 +100,13 @@ int walk_dir(const char *path) {
 			snprintf(fpath, len, "%s%c%s", path, DEF_SEP, fname);
 			walk_dir(fpath);
 		}
-		free(namelist[i]);
 	}
+	
+	#pragma omp parallel
+	{
+		free_entities(namelist, n);
+	}
+	
 	return 0;
 }
 
