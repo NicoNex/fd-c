@@ -59,23 +59,16 @@ static inline void print_file(const char *path, const char *name) {
 	char end_ln = arg.use_zero ? '\0' : '\n';
 
 	memcpy(path_tmp, path, plen);
-	replace_chr(path_tmp, DEF_SEP, arg.path_sep);
-	printf("%s%c%s%c", path_tmp, arg.path_sep, name, end_ln);
-}
-
-// Frees all the dir entities allocated by scandir.
-static inline void free_entities(struct dirent **namelist, const int n) {
-	if (n > 0) {
-		printf("free %d %s\n", n-1, namelist[n-1]->d_name);
-		free(namelist[n-1]);
-		free_entities(namelist, n-1);
+	if (arg.path_sep != DEF_SEP) {
+		replace_chr(path_tmp, DEF_SEP, arg.path_sep);
 	}
+	printf("%s%c%s%c", path_tmp, arg.path_sep, name, end_ln);
 }
 
 // Recursively walks into a directory tree.
 int walk_dir(const char *path) {
 	struct dirent **namelist;
-	int n = scandir(path, &namelist, NULL, alphasort);
+	const int n = scandir(path, &namelist, NULL, alphasort);
 	if (n == -1) {
 		char errmsg[256];
 		snprintf(errmsg, 256, "scandir: unable to read directory %s.", path);
@@ -83,30 +76,23 @@ int walk_dir(const char *path) {
 		exit(EXIT_FAILURE);
 	}
 
-	#pragma omp parallel for schedule(static)
 	for (int i = 2; i < n; i++) {
 		const char *fname = namelist[i]->d_name;
 
-		if (is_dots(fname)) {
-			continue;
-		}
-		if (matches(fname)) {
-			print_file(path, fname);
-		}
-		if (is_dir(namelist[i]->d_type)) {
-			int len = strlen(path) + strlen(fname) + 2;
-			char fpath[len];
+		if (!is_dots(fname)) {
+			if (matches(fname)) {
+				print_file(path, fname);
+			}
+			if (is_dir(namelist[i]->d_type)) {
+				int len = strlen(path) + strlen(fname) + 2;
+				char fpath[len];
 
-			snprintf(fpath, len, "%s%c%s", path, DEF_SEP, fname);
-			walk_dir(fpath);
+				snprintf(fpath, len, "%s%c%s", path, DEF_SEP, fname);
+				walk_dir(fpath);
+				free(namelist[i]);
+			}
 		}
 	}
-	
-	#pragma omp parallel
-	{
-		free_entities(namelist, n);
-	}
-	
 	return 0;
 }
 
